@@ -1,0 +1,171 @@
+{
+  "station_id": 96745,
+  "station_name": "Stasiun Meteorologi Kemayoran, Kota Adm. Jakarta Pusat",
+  "target_definition": "1 = RR >= 20 mm/hari",
+  "features": [
+    "Tn",
+    "Tx",
+    "Tavg",
+    "RH_avg",
+    "ss",
+    "ff_x",
+    "ff_avg",
+    "rain_yesterday",
+    "month"
+  ],
+  "model": "Random Forest (tuned, 1-SE)",
+  "threshold": 0.52,
+  "random_state": 42,
+  "split": {
+    "test_size": 0.2,
+    "stratify": true
+  },
+  "preprocessing": {
+    "sentinel_values": [
+      8888,
+      9999
+    ],
+    "imputation": "median (di dalam pipeline, fit pada train)",
+    "scaling": "StandardScaler untuk Logistic Regression",
+    "feature_engineering": [
+      "rain_yesterday = RR lag-1",
+      "month"
+    ]
+  },
+  "data": {
+    "rows_station": 4018,
+    "rows_model": 3662,
+    "positive_rate": 0.09639541234298198,
+    "date_range": "2010-01-01 s.d. 2020-12-31"
+  },
+  "best_params_logreg": {
+    "model__C": 10,
+    "model__penalty": "l2"
+  },
+  "best_params_rf": {
+    "model__max_depth": 10,
+    "model__max_features": "sqrt",
+    "model__min_samples_leaf": 5,
+    "model__n_estimators": 200
+  },
+  "params_rf_1se": {
+    "max_depth": 6,
+    "max_features": 0.7,
+    "min_samples_leaf": 10,
+    "n_estimators": 300
+  },
+  "metrics": [
+    {
+      "model": "Logistic Regression (baseline)",
+      "threshold": 0.5,
+      "accuracy": 0.7926,
+      "precision": 0.3005,
+      "recall": 0.8592,
+      "f1": 0.4453,
+      "roc_auc": 0.9068,
+      "pr_auc": 0.5719
+    },
+    {
+      "model": "Logistic Regression (tuned)",
+      "threshold": 0.61,
+      "accuracy": 0.8431,
+      "precision": 0.359,
+      "recall": 0.7887,
+      "f1": 0.4934,
+      "roc_auc": 0.9069,
+      "pr_auc": 0.5728
+    },
+    {
+      "model": "Random Forest (baseline)",
+      "threshold": 0.5,
+      "accuracy": 0.9168,
+      "precision": 0.7273,
+      "recall": 0.2254,
+      "f1": 0.3441,
+      "roc_auc": 0.8674,
+      "pr_auc": 0.4536
+    },
+    {
+      "model": "Random Forest (best CV)",
+      "threshold": 0.5,
+      "accuracy": 0.8799,
+      "precision": 0.4261,
+      "recall": 0.6901,
+      "f1": 0.5269,
+      "roc_auc": 0.8944,
+      "pr_auc": 0.4809
+    },
+    {
+      "model": "Random Forest (tuned, 1-SE)",
+      "threshold": 0.52,
+      "accuracy": 0.8213,
+      "precision": 0.3256,
+      "recall": 0.7887,
+      "f1": 0.4609,
+      "roc_auc": 0.9002,
+      "pr_auc": 0.4964
+    }
+  ],
+  "goodfit": [
+    {
+      "model": "Logistic Regression (baseline)",
+      "threshold": 0.5,
+      "train_f1": 0.4239,
+      "test_f1": 0.4453,
+      "gap_f1": -0.0214,
+      "train_auc": 0.8807,
+      "test_auc": 0.9068,
+      "gap_auc": -0.0262,
+      "cv_f1": 0.417,
+      "diagnosis": "Underfit / bias tinggi"
+    },
+    {
+      "model": "Logistic Regression (tuned)",
+      "threshold": 0.61,
+      "train_f1": 0.4243,
+      "test_f1": 0.4934,
+      "gap_f1": -0.0691,
+      "train_auc": 0.8806,
+      "test_auc": 0.9069,
+      "gap_auc": -0.0263,
+      "cv_f1": 0.418,
+      "diagnosis": "Goodfit"
+    },
+    {
+      "model": "Random Forest (baseline)",
+      "threshold": 0.5,
+      "train_f1": 1.0,
+      "test_f1": 0.3441,
+      "gap_f1": 0.6559,
+      "train_auc": 1.0,
+      "test_auc": 0.8674,
+      "gap_auc": 0.1326,
+      "cv_f1": 0.1959,
+      "diagnosis": "Overfit"
+    },
+    {
+      "model": "Random Forest (best CV)",
+      "threshold": 0.5,
+      "train_f1": 0.7095,
+      "test_f1": 0.5269,
+      "gap_f1": 0.1826,
+      "train_auc": 0.9808,
+      "test_auc": 0.8944,
+      "gap_auc": 0.0864,
+      "cv_f1": 0.4612,
+      "diagnosis": "Overfit"
+    },
+    {
+      "model": "Random Forest (tuned, 1-SE)",
+      "threshold": 0.52,
+      "train_f1": 0.4922,
+      "test_f1": 0.4609,
+      "gap_f1": 0.0313,
+      "train_auc": 0.9266,
+      "test_auc": 0.9002,
+      "gap_auc": 0.0264,
+      "cv_f1": 0.4261,
+      "diagnosis": "Goodfit"
+    }
+  ]
+}

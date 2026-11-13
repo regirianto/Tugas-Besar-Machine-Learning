@@ -1,0 +1,6 @@
+flask>=3.0
+pandas>=2.0
+scikit-learn>=1.6
+joblib>=1.3
+# Opsional, hanya jika memakai file .pth yang benar-benar dibuat torch.save:
+# torch>=2.0

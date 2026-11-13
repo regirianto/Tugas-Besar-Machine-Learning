@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prediksi Curah Hujan — Tugas Besar ML</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0; min-height: 100vh;
+    display: flex; justify-content: center; padding: 32px 16px;
+  }
+  .card {
+    width: 100%; max-width: 640px;
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 16px; padding: 28px;
+  }
+  h1 { font-size: 20px; margin-bottom: 4px; }
+  .sub { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
+  .meta { color: #64748b; font-size: 11px; margin-bottom: 16px; }
+  .meta code { color: #7dd3fc; }
+  .badge-status {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    font-size: 12px; margin-bottom: 16px; border: 1px solid;
+  }
+  .ok { color: #4ade80; border-color: #166534; background: #052e16; }
+  .err { color: #fca5a5; border-color: #7f1d1d; background: #450a0a; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+  input {
+    width: 100%; padding: 9px 12px; border-radius: 8px;
+    border: 1px solid #475569; background: #0f172a; color: #e2e8f0; font-size: 14px;
+  }
+  input:focus { outline: none; border-color: #38bdf8; }
+  button {
+    margin-top: 20px; width: 100%; padding: 12px;
+    background: #0284c7; color: #fff; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { background: #0369a1; }
+  button:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+  .error-msg { margin-top: 12px; color: #f87171; font-size: 13px; }
+  .result { margin-top: 24px; padding: 20px; border-radius: 12px; border: 1px solid #334155; }
+  .rain { border-color: #dc2626; background: #450a0a; }
+  .safe { border-color: #16a34a; background: #052e16; }
+  .verdict { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+  .rain .verdict { color: #f87171; }
+  .safe .verdict { color: #4ade80; }
+  .bar { height: 10px; background: #334155; border-radius: 999px; overflow: hidden; margin: 8px 0 4px; }
+  .bar > div { height: 100%; background: #f59e0b; }
+  .prob-label { font-size: 13px; color: #94a3b8; }
+  footer { margin-top: 24px; font-size: 11px; color: #64748b; text-align: center; }
+</style>
+</head>
+<body>
+<div id="app" class="card">
+  <h1>🌧 Prediksi Curah Hujan Harian</h1>
+  <p class="sub">Logistic Regression &amp; Random Forest · <b>Kemayoran, Jakarta Pusat</b> · Model hasil Google Colab</p>
+
+  <span class="badge-status" :class="ready ? 'ok' : 'err'">
+    {{ status }}
+  </span>
+  <p class="meta">
+    Model: <b>(( model_name ))</b> · Artefak: <code>(( artifact ))</code>
+    · Ambang: (( "%.2f"|format(threshold) ))
+  </p>
+
+  <div class="grid">
+    <div v-for="f in fields" :key="f.name">
+      <label>{{ f.label }} ({{ f.unit }})</label>
+      <input type="number" step="any" v-model.number="form[f.name]" />
+    </div>
+  </div>
+
+  <button :disabled="!ready || loading" @click="submit">
+    {{ loading ? "Memproses..." : "Prediksi" }}
+  </button>
+  <p v-if="error" class="error-msg">{{ error }}</p>
+
+  <div v-if="result" class="result" :class="result.prediction === 'HUJAN LEBAT' ? 'rain' : 'safe'">
+    <p class="verdict">{{ result.prediction }}</p>
+    <p class="prob-label">Probabilitas hujan lebat:</p>
+    <div class="bar"><div :style="{ width: (result.prob * 100) + '%' }"></div></div>
+    <p class="prob-label"><b>{{ (result.prob * 100).toFixed(1) }}%</b> — ambang klasifikasi: {{ (result.threshold * 100).toFixed(0) }}%</p>
+    <p class="prob-label">Model: {{ result.model }} · Artefak: {{ result.artifact }}</p>
+  </div>
+
+  <footer>
+    Tugas Besar Machine Learning · CRISP-DM · Dataset: BMKG via Kaggle (greegtitan/indonesia-climate)
+  </footer>
+</div>
+
+<script>window.__READY__ = (( ready | tojson )); window.__STATUS__ = (( status | tojson ));</script>
+<script>
+const { createApp } = Vue;
+const FIELDS = [
+  { name: "Tn", label: "Suhu minimum", unit: "°C" },
+  { name: "Tx", label: "Suhu maksimum", unit: "°C" },
+  { name: "Tavg", label: "Suhu rata-rata", unit: "°C" },
+  { name: "RH_avg", label: "Kelembapan rata-rata", unit: "%" },
+  { name: "ss", label: "Durasi sinar matahari", unit: "jam" },
+  { name: "ff_x", label: "Kecepatan angin maks", unit: "m/s" },
+  { name: "ff_avg", label: "Kecepatan angin avg", unit: "m/s" },
+  { name: "rain_yesterday", label: "Hujan kemarin (RR)", unit: "mm" },
+  { name: "month", label: "Bulan", unit: "1-12" },
+];
+const DEFAULTS = {
+  Tn: 24.0, Tx: 31.0, Tavg: 27.5, RH_avg: 85.0, ss: 1.5,
+  ff_x: 10.0, ff_avg: 4.0, rain_yesterday: 35.0, month: 1,
+};
+
+createApp({
+  data() {
+    return {
+      fields: FIELDS,
+      form: { ...DEFAULTS },
+      ready: window.__READY__,
+      loading: false,
+      error: "",
+      result: null,
+      status: window.__STATUS__,
+    };
+  },
+  mounted() {
+    // Mode demo/screenshot: buka /?demo=1 -> otomatis prediksi nilai default
+    if (new URLSearchParams(window.location.search).has("demo")) this.submit();
+  },
+  methods: {
+    async submit() {      this.loading = true; this.error = ""; this.result = null;
+      try {
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(this.form),
+        });
+        const data = await res.json();
+        if (!res.ok) { this.error = data.error || "Terjadi kesalahan."; return; }
+        this.result = data;
+      } catch (e) {
+        this.error = "Gagal menghubungi API: " + e;
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+}).mount("#app");
+</script>
+</body>
+</html>
